@@ -9,6 +9,9 @@ import com.onclass.bootcamp.enums.ExceptionStatusCode;
 import com.onclass.bootcamp.model.bootcamp.Bootcamp;
 import com.onclass.bootcamp.usecase.bootcamp.BootcampUseCase;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
@@ -17,8 +20,11 @@ import reactor.core.publisher.Mono;
 
 import java.net.URI;
 
+import static com.onclass.bootcamp.api.utils.HandlersResponseUtil.buildBodySuccessResponse;
+
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class BootcampHandler {
     private final BootcampUseCase bootcampUseCase;
     private final BootcampMapper bootcampMapper;
@@ -26,14 +32,34 @@ public class BootcampHandler {
 
     public Mono<ServerResponse> listenSaveBootcamp(ServerRequest serverRequest) {
         return serverRequest.bodyToMono(BootcampRequestDto.class)
+                .doOnNext(bootcampRequestDto -> log.info("Received bootcamp request: {}", bootcampRequestDto))
                 .flatMap(validatorUtil::validate)
                 .map(bootcampMapper::toModel)
                 .flatMap(bootcampUseCase::saveBootcamp)
                 .map(bootcampMapper::toBootcampResponseDto)
                 .flatMap(savedBootcamp -> ServerResponse.created(URI.create(""))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .bodyValue(HandlersResponseUtil.buildBodySuccessResponse(ExceptionStatusCode.CREATED.status(), savedBootcamp))
+                        .bodyValue(buildBodySuccessResponse(ExceptionStatusCode.CREATED.status(), savedBootcamp))
 
+                );
+    }
+
+    public Mono<ServerResponse> listenListBootcamps(ServerRequest request) {
+        int page = Integer.parseInt(request.queryParam("page").orElse("0"));
+        int size = Integer.parseInt(request.queryParam("size").orElse("10"));
+        String sortBy = request.queryParam("sortBy").orElse("name");
+        String order = request.queryParam("order").orElse("asc");
+
+        log.info("[HANDLER] listenListBootcamps called with page={}, size={}, sortBy={}, order={}", page, size, sortBy, order);
+
+        return bootcampUseCase.getBootcampsWithCapabilities(page, size, sortBy, order)
+                .map(bootcampMapper::toBootcampWithCapabilitiesResponseDto)
+                .collectList()
+                .doOnNext(dtoList -> log.info("[HANDLER] Bootcamps mapped: {}", dtoList))
+                .map(dtoList -> new PageImpl<>(dtoList, PageRequest.of(page, size), dtoList.size()))
+                .flatMap(pageResult -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(buildBodySuccessResponse(ExceptionStatusCode.OK.status(), pageResult))
                 );
     }
 }
