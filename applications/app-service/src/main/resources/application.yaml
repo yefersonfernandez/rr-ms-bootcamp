@@ -41,11 +41,14 @@ springdoc:
 routes:
   paths:
     bootcamps: "/bootcamp/api/v1/bootcamps"
+    bootcampsList: "/bootcamp/api/v1/bootcamps/list"
+
 
 adapter:
   restconsumer:
+    technology-url: "http://localhost:8081"
+    capability-url: "http://localhost:8082"
     timeout: 5000
-    url: "http://localhost:8082"
 
 resilience4j:
   circuitbreaker:
