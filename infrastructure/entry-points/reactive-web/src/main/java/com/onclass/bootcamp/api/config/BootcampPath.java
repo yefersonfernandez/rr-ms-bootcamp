@@ -9,6 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "routes.paths")
 public class BootcampPath {
     private String bootcamps;
+    private String bootcampsList;
 }
 
 

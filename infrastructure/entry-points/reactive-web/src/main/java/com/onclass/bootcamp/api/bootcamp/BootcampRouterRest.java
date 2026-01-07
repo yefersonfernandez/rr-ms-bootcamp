@@ -19,6 +19,7 @@ public class BootcampRouterRest {
     public RouterFunction<ServerResponse> routerFunction(BootcampHandler handler) {
         return route()
                 .POST(bootcampPath.getBootcamps(), handler::listenSaveBootcamp, BootcampOpenApi::saveBootcamp)
+                .GET(bootcampPath.getBootcampsList(), handler::listenListBootcamps, BootcampOpenApi::listBootcamps)
                 .build();
     }
 }
