@@ -1,10 +1,12 @@
 server:
   port: 8083
+
 spring:
   application:
     name: "ms-bootcamp"
   devtools:
     add-properties: false
+
 management:
   endpoints:
     web:
@@ -17,8 +19,10 @@ management:
   health:
     circuitbreakers:
       enabled: true
+
 cors:
   allowed-origins: "http://localhost:4200,http://localhost:8080"
+
 adapters:
   r2dbc:
     host: "${R2DBC_HOST}"
@@ -27,22 +31,26 @@ adapters:
     schema: "${R2DBC_SCHEMA}"
     username: "${R2DBC_USERNAME}"
     password: "${R2DBC_PASSWORD}"
+
 springdoc:
   swagger-ui:
     path: "/bootcamp/api/doc/swagger-ui.html"
   api-docs:
     path: "/bootcamp/api/doc/api-docs"
+
 routes:
   paths:
     bootcamps: "/bootcamp/api/v1/bootcamps"
+
 adapter:
   restconsumer:
     timeout: 5000
     url: "http://localhost:8082"
+
 resilience4j:
   circuitbreaker:
     instances:
-      testGet:
+      associateCapabilitiesCB:
         registerHealthIndicator: true
         failureRateThreshold: 50
         slowCallRateThreshold: 50
@@ -51,12 +59,4 @@ resilience4j:
         slidingWindowSize: 10
         minimumNumberOfCalls: 10
         waitDurationInOpenState: "10s"
-      testPost:
-        registerHealthIndicator: true
-        failureRateThreshold: 50
-        slowCallRateThreshold: 50
-        slowCallDurationThreshold: "2s"
-        permittedNumberOfCallsInHalfOpenState: 3
-        slidingWindowSize: 10
-        minimumNumberOfCalls: 10
-        waitDurationInOpenState: "10s"
+
