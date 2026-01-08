@@ -47,4 +47,37 @@ public class CapabilityAssociationRestConsumer implements CapabilityAssociationC
                 .then();
     }
 
+    @CircuitBreaker(name = "deleteAssociationsCB")
+    public Mono<Void> deleteAssociationsByBootcampId(Long bootcampId) {
+        return capabilityWebClient.delete()
+                .uri("/capability/api/v1/capabilities/bootcamp-associations/{bootcampId}", bootcampId)
+                .retrieve()
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
+                        response.bodyToMono(String.class).flatMap(body -> Mono.error(new BusinessException(body))))
+                .toBodilessEntity()
+                .then();
+    }
+
+    @CircuitBreaker(name = "deleteCapabilityCB")
+    public Mono<Void> deleteCapabilityById(Long capabilityId) {
+        return capabilityWebClient.delete()
+                .uri("/capability/api/v1/capabilities/{capabilityId}", capabilityId)
+                .retrieve()
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
+                        response.bodyToMono(String.class).flatMap(body -> Mono.error(new BusinessException(body))))
+                .toBodilessEntity()
+                .then();
+    }
+
+    @CircuitBreaker(name = "deleteAssociationsAndDependenciesCB")
+    public Mono<Void> deleteAssociationsAndDependenciesByBootcampId(Long bootcampId) {
+        return capabilityWebClient.delete()
+                .uri("/capability/api/v1/capabilities/bootcamp-associations-and-dependencies/{bootcampId}", bootcampId)
+                .retrieve()
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
+                        response.bodyToMono(String.class).flatMap(body -> Mono.error(new BusinessException(body))))
+                .toBodilessEntity()
+                .then();
+    }
+
 }
