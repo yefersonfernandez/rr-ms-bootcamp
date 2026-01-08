@@ -20,6 +20,7 @@ public class BootcampRouterRest {
         return route()
                 .POST(bootcampPath.getBootcamps(), handler::listenSaveBootcamp, BootcampOpenApi::saveBootcamp)
                 .GET(bootcampPath.getBootcampsList(), handler::listenListBootcamps, BootcampOpenApi::listBootcamps)
+                .DELETE(bootcampPath.getDeleteBootcampById(), handler::listenDeleteBootcamp, BootcampOpenApi::deleteBootcamp)
                 .build();
     }
 }

@@ -42,6 +42,12 @@ public class BootcampRepositoryAdapter extends ReactiveAdapterOperations<
     }
 
     @Override
+    public Mono<Bootcamp> findBootcampById(Long bootcampId) {
+        return repository.findById(bootcampId)
+                .map(super::toEntity);
+    }
+
+    @Override
     public Flux<Bootcamp> findBootcampsPagedAndSorted(int page, int size, String sortBy, String order) {
         return Mono.just(order)
                 .map(ord -> ord.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC)
@@ -49,6 +55,6 @@ public class BootcampRepositoryAdapter extends ReactiveAdapterOperations<
                 .map(sort -> PageRequest.of(page, size, sort))
                 .flatMapMany(pageRequest -> repository.findAllBy(pageRequest))
                 .map(super::toEntity)
-                .doOnNext(boc -> log.info("[DB RESULT] bootcamp_id={}, name={}, capabilityCount={}", boc.getId(), boc.getName(), boc.getCapabilityCount()));
+                .doOnNext(boc -> log.info("[DB] bootcamp_id={}, name={}, capabilityCount={}", boc.getId(), boc.getName(), boc.getCapabilityCount()));
     }
 }
