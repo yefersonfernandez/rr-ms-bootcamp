@@ -4,7 +4,7 @@ import com.onclass.bootcamp.consumer.dto.response.TechnologyListResponseDto;
 import com.onclass.bootcamp.enums.ExceptionMessages;
 import com.onclass.bootcamp.exceptions.TechnologyMicroserviceException;
 import com.onclass.bootcamp.model.technology.TechnologySummary;
-import com.onclass.bootcamp.port.consumer.CapabilityTechnologyConsumerPort;
+import com.onclass.bootcamp.port.consumer.TechnologyConsumerPort;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
@@ -15,12 +15,12 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 @Service
-public class CapabilityTechnologyRestConsumer implements CapabilityTechnologyConsumerPort {
+public class TechnologyRestConsumer implements TechnologyConsumerPort {
     private static final String GET_TECHNOLOGIES_URL = "/technology/api/v1/capabilities/{capabilityId}/technologies";
 
     private final WebClient technologyWebClient;
 
-    public CapabilityTechnologyRestConsumer(@Qualifier("technologyWebClient") WebClient technologyWebClient) {
+    public TechnologyRestConsumer(@Qualifier("technologyWebClient") WebClient technologyWebClient) {
         this.technologyWebClient = technologyWebClient;
     }
 
