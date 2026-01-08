@@ -2,14 +2,14 @@ package com.onclass.bootcamp.usecase.bootcamp;
 
 import com.onclass.bootcamp.exceptions.BootcampAlreadyExistsException;
 import com.onclass.bootcamp.exceptions.BootcampCapabilitiesCountException;
+import com.onclass.bootcamp.exceptions.NotFoundException;
 import com.onclass.bootcamp.exceptions.SagaCompensationException;
 import com.onclass.bootcamp.model.bootcamp.Bootcamp;
 import com.onclass.bootcamp.model.bootcamp.BootcampWithCapabilities;
 import com.onclass.bootcamp.model.bootcamp.gateways.BootcampRepositoryPort;
-import com.onclass.bootcamp.port.consumer.BootcampCapabilityConsumerPort;
-import com.onclass.bootcamp.port.consumer.CapabilityAssociationConsumerPort;
 import com.onclass.bootcamp.enums.ExceptionMessages;
-import com.onclass.bootcamp.port.consumer.CapabilityTechnologyConsumerPort;
+import com.onclass.bootcamp.port.consumer.CapabilityConsumerPort;
+import com.onclass.bootcamp.port.consumer.TechnologyConsumerPort;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -24,9 +24,8 @@ import static com.onclass.bootcamp.usecase.utils.BootcampUtils.isValidCapabiliti
 @RequiredArgsConstructor
 public class BootcampUseCase {
     private final BootcampRepositoryPort bootcampRepositoryPort;
-    private final CapabilityAssociationConsumerPort capabilityAssociationConsumerPort;
-    private final CapabilityTechnologyConsumerPort capabilityTechnologyConsumerPort;
-    private final BootcampCapabilityConsumerPort bootcampCapabilityConsumerPort;
+    private final CapabilityConsumerPort capabilityConsumerPort;
+    private final TechnologyConsumerPort technologyConsumerPort;
 
     public Mono<Bootcamp> saveBootcamp(Bootcamp bootcamp) {
         bootcamp.setCapabilityCount(bootcamp.getCapabilityIds().size());
@@ -52,7 +51,7 @@ public class BootcampUseCase {
     private Mono<Bootcamp> saveAndAssociateCapabilities(Bootcamp bootcamp) {
         var capabilityIds = bootcamp.getCapabilityIds();
         return bootcampRepositoryPort.saveBootcamp(bootcamp)
-                .flatMap(savedBootcamp -> capabilityAssociationConsumerPort
+                .flatMap(savedBootcamp -> capabilityConsumerPort
                         .associateCapabilities(savedBootcamp.getId(), capabilityIds)
                         .thenReturn(savedBootcamp)
                         .onErrorResume(e -> bootcampRepositoryPort.deleteBootcamp(savedBootcamp.getId())
@@ -64,13 +63,20 @@ public class BootcampUseCase {
 
     public Flux<BootcampWithCapabilities> getBootcampsWithCapabilities(int page, int size, String sortBy, String order) {
         return bootcampRepositoryPort.findBootcampsPagedAndSorted(page, size, sortBy, order)
-                .flatMapSequential(bootcamp -> bootcampCapabilityConsumerPort.getCapabilitiesByBootcampId(bootcamp.getId())
-                        .flatMapSequential(capability -> capabilityTechnologyConsumerPort.getTechnologiesByCapabilityId(capability.getId())
+                .flatMapSequential(bootcamp -> capabilityConsumerPort.getCapabilitiesByBootcampId(bootcamp.getId())
+                        .flatMapSequential(capability -> technologyConsumerPort.getTechnologiesByCapabilityId(capability.getId())
                                 .collectList()
                                 .map(technologies -> buildCapabilitySummaryWithTechnologies(capability, technologies))
                         )
                         .collectList()
                         .map(capabilities -> buildBootcampWithCapabilities(bootcamp, capabilities))
                 );
+    }
+
+    public Mono<Void> deleteBootcamp(Long bootcampId) {
+        return bootcampRepositoryPort.findBootcampById(bootcampId)
+                .switchIfEmpty(Mono.error(new NotFoundException(ExceptionMessages.BOOTCAMP_NOT_FOUND.format(bootcampId))))
+                .flatMap(bootcamp -> capabilityConsumerPort.deleteAssociatedDataByBootcampId(bootcampId)
+                        .then(bootcampRepositoryPort.deleteBootcamp(bootcampId)));
     }
 }
