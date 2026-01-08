@@ -42,7 +42,7 @@ routes:
   paths:
     bootcamps: "/bootcamp/api/v1/bootcamps"
     bootcampsList: "/bootcamp/api/v1/bootcamps/list"
-
+    delete-bootcamp-by-id: "/bootcamp/api/v1/bootcamps/{bootcampId}"
 
 adapter:
   restconsumer:
