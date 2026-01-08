@@ -10,6 +10,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class BootcampPath {
     private String bootcamps;
     private String bootcampsList;
+    private String deleteBootcampById;
 }
-
-
