@@ -3,8 +3,8 @@ package com.onclass.bootcamp.exceptions;
 
 import com.onclass.bootcamp.enums.ExceptionStatusCode;
 
-public class CapabilityNotFoundException extends BusinessException {
-    public CapabilityNotFoundException(String message) {
+public class NotFoundException extends BusinessException {
+    public NotFoundException(String message) {
         super(ExceptionStatusCode.NOT_FOUND, message, 404);
     }
 }
