@@ -43,6 +43,7 @@ routes:
     bootcamps: "/bootcamp/api/v1/bootcamps"
     bootcampsList: "/bootcamp/api/v1/bootcamps/list"
     delete-bootcamp-by-id: "/bootcamp/api/v1/bootcamps/{bootcampId}"
+    validate-conflicts: "/bootcamp/api/v1/bootcamps/{id}/conflicts"
 
 adapter:
   restconsumer:
