@@ -14,12 +14,12 @@ import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDate;
+import java.util.List;
+
 import static com.onclass.bootcamp.constants.BootcampConstants.MAX_CAPS;
 import static com.onclass.bootcamp.constants.BootcampConstants.MIN_CAPS;
-import static com.onclass.bootcamp.usecase.utils.BootcampUtils.buildBootcampWithCapabilities;
-import static com.onclass.bootcamp.usecase.utils.BootcampUtils.buildCapabilitySummaryWithTechnologies;
-import static com.onclass.bootcamp.usecase.utils.BootcampUtils.hasNoRepeatedCapabilities;
-import static com.onclass.bootcamp.usecase.utils.BootcampUtils.isValidCapabilitiesCount;
+import static com.onclass.bootcamp.usecase.utils.BootcampUtils.*;
 
 @RequiredArgsConstructor
 public class BootcampUseCase {
@@ -78,5 +78,15 @@ public class BootcampUseCase {
                 .switchIfEmpty(Mono.error(new NotFoundException(ExceptionMessages.BOOTCAMP_NOT_FOUND.format(bootcampId))))
                 .flatMap(bootcamp -> capabilityConsumerPort.deleteAssociatedDataByBootcampId(bootcampId)
                         .then(bootcampRepositoryPort.deleteBootcamp(bootcampId)));
+    }
+
+    public Mono<Boolean> validateConflicts(Long newBootcampId, List<Long> enrolledBootcampIds) {
+        return bootcampRepositoryPort.findBootcampById(newBootcampId)
+                .switchIfEmpty(Mono.error(new NotFoundException(ExceptionMessages.BOOTCAMP_NOT_FOUND.format(newBootcampId))))
+                .flatMap(candidateBootcamp ->
+                        bootcampRepositoryPort.findAllByIds(enrolledBootcampIds)
+                                .any(enrolledBootcamp -> hasScheduleConflict(candidateBootcamp, enrolledBootcamp))
+                )
+                .map(hasConflict -> !hasConflict);
     }
 }
