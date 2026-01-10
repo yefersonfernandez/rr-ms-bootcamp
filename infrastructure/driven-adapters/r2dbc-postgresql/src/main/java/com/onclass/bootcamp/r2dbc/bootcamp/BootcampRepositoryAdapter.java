@@ -12,6 +12,8 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @Repository
 @Slf4j
 public class BootcampRepositoryAdapter extends ReactiveAdapterOperations<
@@ -31,19 +33,14 @@ public class BootcampRepositoryAdapter extends ReactiveAdapterOperations<
     }
 
     @Override
-    public Mono<Void> deleteBootcamp(Long bootcampId) {
-        return repository.deleteById(bootcampId);
+    public Mono<Bootcamp> findBootcampById(Long bootcampId) {
+        return repository.findById(bootcampId)
+                .map(super::toEntity);
     }
 
     @Override
     public Mono<Bootcamp> findBootcampByName(String name) {
         return repository.findByName(name)
-                .map(super::toEntity);
-    }
-
-    @Override
-    public Mono<Bootcamp> findBootcampById(Long bootcampId) {
-        return repository.findById(bootcampId)
                 .map(super::toEntity);
     }
 
@@ -56,5 +53,16 @@ public class BootcampRepositoryAdapter extends ReactiveAdapterOperations<
                 .flatMapMany(pageRequest -> repository.findAllBy(pageRequest))
                 .map(super::toEntity)
                 .doOnNext(boc -> log.info("[DB] bootcamp_id={}, name={}, capabilityCount={}", boc.getId(), boc.getName(), boc.getCapabilityCount()));
+    }
+
+    @Override
+    public Flux<Bootcamp> findAllByIds(List<Long> bootcampIds) {
+        return repository.findAllByIdIn(bootcampIds)
+                .map(super::toEntity);
+    }
+
+    @Override
+    public Mono<Void> deleteBootcamp(Long bootcampId) {
+        return repository.deleteById(bootcampId);
     }
 }

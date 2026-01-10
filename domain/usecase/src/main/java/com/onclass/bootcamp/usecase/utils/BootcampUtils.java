@@ -37,4 +37,14 @@ public class BootcampUtils {
                 .capabilities(capabilities)
                 .build();
     }
+
+
+    public static boolean hasScheduleConflict(Bootcamp candidate, Bootcamp enrolled) {
+        return candidate.getReleaseDate().isBefore(calculateEndDate(enrolled))
+                && calculateEndDate(candidate).isAfter(enrolled.getReleaseDate());
+    }
+
+    public static LocalDate calculateEndDate(Bootcamp bootcamp) {
+        return bootcamp.getReleaseDate().plusDays(bootcamp.getDuration());
+    }
 }
