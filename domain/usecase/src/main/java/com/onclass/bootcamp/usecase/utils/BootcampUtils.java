@@ -3,6 +3,7 @@ package com.onclass.bootcamp.usecase.utils;
 import com.onclass.bootcamp.model.bootcamp.Bootcamp;
 import com.onclass.bootcamp.model.bootcamp.BootcampWithCapabilities;
 import com.onclass.bootcamp.model.capability.CapabilitySummary;
+import com.onclass.bootcamp.port.sqs.model.BootcampMessage;
 import com.onclass.bootcamp.model.technology.TechnologySummary;
 import lombok.experimental.UtilityClass;
 
@@ -38,13 +39,23 @@ public class BootcampUtils {
                 .build();
     }
 
+    public static BootcampMessage buildBootcampMessage(Bootcamp bootcamp) {
+        return BootcampMessage.builder()
+                .bootcampId(bootcamp.getId())
+                .name(bootcamp.getName())
+                .description(bootcamp.getDescription())
+                .releaseDate(bootcamp.getReleaseDate())
+                .duration(bootcamp.getDuration())
+                .capabilityCount(bootcamp.getCapabilityCount())
+                .build();
+    }
 
     public static boolean hasScheduleConflict(Bootcamp candidate, Bootcamp enrolled) {
         return candidate.getReleaseDate().isBefore(calculateEndDate(enrolled))
                 && calculateEndDate(candidate).isAfter(enrolled.getReleaseDate());
     }
 
-    public static LocalDate calculateEndDate(Bootcamp bootcamp) {
+    private static LocalDate calculateEndDate(Bootcamp bootcamp) {
         return bootcamp.getReleaseDate().plusDays(bootcamp.getDuration());
     }
 }

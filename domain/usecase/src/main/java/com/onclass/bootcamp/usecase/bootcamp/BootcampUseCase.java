@@ -10,11 +10,12 @@ import com.onclass.bootcamp.model.bootcamp.gateways.BootcampRepositoryPort;
 import com.onclass.bootcamp.enums.ExceptionMessages;
 import com.onclass.bootcamp.port.consumer.CapabilityConsumerPort;
 import com.onclass.bootcamp.port.consumer.TechnologyConsumerPort;
+import com.onclass.bootcamp.port.sqs.SqsSenderPort;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
-import java.time.LocalDate;
 import java.util.List;
 
 import static com.onclass.bootcamp.constants.BootcampConstants.MAX_CAPS;
@@ -26,6 +27,7 @@ public class BootcampUseCase {
     private final BootcampRepositoryPort bootcampRepositoryPort;
     private final CapabilityConsumerPort capabilityConsumerPort;
     private final TechnologyConsumerPort technologyConsumerPort;
+    private final SqsSenderPort sqsSenderPort;
 
     public Mono<Bootcamp> saveBootcamp(Bootcamp bootcamp) {
         bootcamp.setCapabilityCount(bootcamp.getCapabilityIds().size());
@@ -53,12 +55,18 @@ public class BootcampUseCase {
         return bootcampRepositoryPort.saveBootcamp(bootcamp)
                 .flatMap(savedBootcamp -> capabilityConsumerPort
                         .associateCapabilities(savedBootcamp.getId(), capabilityIds)
+                        .doOnSuccess(unused -> notifyBootcampCreation(savedBootcamp))
                         .thenReturn(savedBootcamp)
                         .onErrorResume(e -> bootcampRepositoryPort.deleteBootcamp(savedBootcamp.getId())
                                 .then(Mono.error(new SagaCompensationException(
-                                        ExceptionMessages.SAGA_COMPENSATION_ASSOCIATION_FAILURE.getMessage()))
-                                ))
+                                        ExceptionMessages.SAGA_COMPENSATION_ASSOCIATION_FAILURE.getMessage()))))
                 );
+    }
+
+    private void notifyBootcampCreation(Bootcamp bootcamp) {
+        sqsSenderPort.sendBootcampReportMessage(buildBootcampMessage(bootcamp))
+                .subscribeOn(Schedulers.boundedElastic())
+                .subscribe();
     }
 
     public Flux<BootcampWithCapabilities> getBootcampsWithCapabilities(int page, int size, String sortBy, String order) {
