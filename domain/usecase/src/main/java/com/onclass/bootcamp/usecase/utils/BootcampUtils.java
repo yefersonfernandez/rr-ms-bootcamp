@@ -50,6 +50,12 @@ public class BootcampUtils {
                 .build();
     }
 
+    public static Bootcamp enrichWithCapabilityCount(Bootcamp bootcamp) {
+        return bootcamp.toBuilder()
+                .capabilityCount(bootcamp.getCapabilityIds().size())
+                .build();
+    }
+
     public static boolean hasScheduleConflict(Bootcamp candidate, Bootcamp enrolled) {
         return candidate.getReleaseDate().isBefore(calculateEndDate(enrolled))
                 && calculateEndDate(candidate).isAfter(enrolled.getReleaseDate());

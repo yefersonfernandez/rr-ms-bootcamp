@@ -11,6 +11,7 @@ import com.onclass.bootcamp.enums.ExceptionMessages;
 import com.onclass.bootcamp.port.consumer.CapabilityConsumerPort;
 import com.onclass.bootcamp.port.consumer.TechnologyConsumerPort;
 import com.onclass.bootcamp.port.sqs.SqsSenderPort;
+import com.onclass.bootcamp.usecase.utils.BootcampUtils;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -30,7 +31,6 @@ public class BootcampUseCase {
     private final SqsSenderPort sqsSenderPort;
 
     public Mono<Bootcamp> saveBootcamp(Bootcamp bootcamp) {
-        bootcamp.setCapabilityCount(bootcamp.getCapabilityIds().size());
         return Mono.just(bootcamp)
                 .filter(bc -> isValidCapabilitiesCount(bc.getCapabilityIds(), MIN_CAPS, MAX_CAPS))
                 .switchIfEmpty(Mono.error(new BootcampCapabilitiesCountException(
@@ -38,6 +38,7 @@ public class BootcampUseCase {
                 .filter(bc -> hasNoRepeatedCapabilities(bc.getCapabilityIds()))
                 .switchIfEmpty(Mono.error(new BootcampCapabilitiesCountException(
                         ExceptionMessages.BOOTCAMP_CAPABILITIES_REPEATED.getMessage())))
+                .map(BootcampUtils::enrichWithCapabilityCount)
                 .flatMap(this::validateUniqueName)
                 .flatMap(this::saveAndAssociateCapabilities);
     }

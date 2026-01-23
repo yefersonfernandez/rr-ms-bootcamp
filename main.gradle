@@ -83,6 +83,45 @@ subprojects {
         }
     }
 
+    tasks.register('fixBancolombiaScaffoldErrors') {
+        group = 'verification'
+        def projectDir = project.projectDir
+        def subprojectName = project.name
+
+        doLast {
+            def testPath = "src/test/java/com/onclass/bootcamp"
+            def filesToFix = ["ArchitectureTest.java", "Utils.java"]
+
+            filesToFix.each { fileName ->
+                def fileHandle = new File(projectDir, "${testPath}/${fileName}")
+                if (fileHandle.exists()) {
+                    logger.lifecycle("Corrigiendo imports del Scaffold en módulo [${subprojectName}]: ${fileName}")
+                    def content = fileHandle.text
+                    content = content.replaceAll("import static co.com.bancolombia.Utils", "import static com.onclass.bootcamp.Utils")
+                    content = content.replaceAll("import co.com.bancolombia.Utils", "import com.onclass.bootcamp.Utils")
+                    fileHandle.text = content
+                }
+            }
+        }
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        def validateTask = project.tasks.findByName('validateStructure')
+        if (validateTask) {
+            mustRunAfter validateTask
+        }
+        dependsOn fixBancolombiaScaffoldErrors
+    }
+
+    tasks.withType(Test).configureEach {
+        dependsOn fixBancolombiaScaffoldErrors
+    }
+
+    rootProject.tasks.configureEach {
+        if (it.name == 'validateStructure') {
+            it.finalizedBy fixBancolombiaScaffoldErrors
+        }
+    }
 }
 
 jacoco {
@@ -96,6 +135,21 @@ tasks.register('jacocoMergedReport', JacocoReport) {
     sourceDirectories.setFrom files(subprojects.sourceSets.main.allSource.srcDirs)
     classDirectories.setFrom files(subprojects.sourceSets.main.output)
     executionData.setFrom project.fileTree(dir: '.', include: '**/build/jacoco/test.exec')
+
+    classDirectories.setFrom(
+            files(subprojects.sourceSets.main.output).collect {
+                fileTree(dir: it, exclude: [
+                        'com/onclass/bootcamp/api/exception/**',
+                        'com/onclass/bootcamp/api/config/**',
+                        'com/onclass/bootcamp/api/mapper/**',
+                        'com/onclass/bootcamp/api/utils/**',
+                        'com/onclass/bootcamp/metrics/**',
+                        'com/onclass/bootcamp/MainApplication*',
+                        'com/onclass/bootcamp/consumer/config/**',
+                ])
+            }
+    )
+
     reports {
         xml.setRequired true
         csv.setRequired false
